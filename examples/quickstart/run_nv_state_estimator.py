@@ -56,4 +56,4 @@ state_estimation_results = nv_state_estimator.DsseCall(system, measurements_set)
 # Print node voltages
 print("state_estimation_results.voltages: ")
 for node in state_estimation_results.nodes:
-    print('{}={}'.format(node.topology_node.uuid, node.voltage))
+    print('{}={} \n'.format(node.topology_node.uuid, node.voltage))

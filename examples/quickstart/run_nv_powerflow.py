@@ -34,8 +34,8 @@ print("Powerflow converged in " + str(num_iter) + " iterations.\n")
 print("Results: \n")
 voltages = []
 for node in results_pf.nodes:
-    print('{}={}'.format(node.topology_node.uuid, node.voltage_pu))
-    #print('{}={}'.format(node.topology_node.uuid, node.voltage))
+    print('{} = {} \n'.format(node.topology_node.uuid, node.voltage_pu))
+    #print('{}={} \n'.format(node.topology_node.uuid, node.voltage))
     voltages.append(node.voltage_pu)
 
 voltages_ref = [(1-7.970485900477431e-27j), (0.9521818868802214-0.11692768153747995j),
