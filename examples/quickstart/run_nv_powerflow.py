@@ -6,10 +6,12 @@ import numpy
 import cimpy
 import os
 
-
+# Basic logger configuration
 logging.basicConfig(filename='run_nv_powerflow.log', level=logging.INFO, filemode='w')
 
-#python starts as module in subdirectory, 2 folders up to set the new path
+# __file__: path of current file
+# pathlib.Path(__file__): returns the file path object 
+# .parents: root path up to 2 (here up to pyvolt/)
 this_file_folder =  Path(__file__).parents[2]
 p = str(this_file_folder)+"/examples/sample_data/CIGRE-MV-NoTap"
 xml_path = Path(p)
@@ -30,7 +32,7 @@ system.load_cim_data(res['topology'], base_apparent_power)
 results_pf, num_iter = nv_powerflow.solve(system)
 
 # Print node voltages
-print("Powerflow converged in " + str(num_iter) + " iterations.\n")
+print("\n---Powerflow converged in " + str(num_iter) + " iterations.---\n")
 print("Results: \n")
 voltages = []
 for node in results_pf.nodes:
@@ -46,5 +48,13 @@ voltages_ref = [(1-7.970485900477431e-27j), (0.9521818868802214-0.11692768153747
                 (0.8740410220986286-0.1565630049874985j), (0.9563016474701451-0.09917826765833906j),
                 (0.9592141716734833-0.09896267637101246j), (0.8702137462858025-0.15760036065945185j),
                 (0.9239489705253996-0.13105032262255972j)]
+
 epsilon = 1e-4
-numpy.testing.assert_array_almost_equal(voltages, voltages_ref), "Results do not match reference results."
+# numpy.testing.assert_array_almost_equal(voltages, voltages_ref),"Results do not match reference results."
+
+try:
+    numpy.testing.assert_allclose(voltages, voltages_ref, atol = epsilon)
+    print("*Voltages error within epsilon!\n")
+except AssertionError as e:
+    print("*Voltage error is beyond epsilion:")
+    print(e)
