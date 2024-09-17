@@ -22,6 +22,7 @@ system.load_cim_data(res['topology'], base_apparent_power)
 
 # Open breaker
 system.breakers[-1].open_breaker()
+# Due to topology change, re-index the node list and re-calculate the Ymatrix
 system.Ymatrix_calc()
 
 # Execute power flow analysis
@@ -40,6 +41,7 @@ print("\n")
 
 # Close breaker
 system.breakers[-1].close_breaker()
+# Due to topology change, re-index the node list and re-calculate the Ymatrix
 system.Ymatrix_calc()
 
 # Execute power flow analysis
@@ -49,5 +51,5 @@ results_pf, num_iter = nv_powerflow.solve(system)
 print("Powerflow converged in " + str(num_iter) + " iterations.\n")
 print("Results:")
 for node in results_pf.nodes:
-    print('{}={}'.format(node.topology_node.name, np.absolute(node.voltage)))
+    print('{} = {} \n'.format(node.topology_node.name, np.absolute(node.voltage)))
     #print('{}={}'.format(node.topology_node.name, np.absolute(node.voltage_pu)))
