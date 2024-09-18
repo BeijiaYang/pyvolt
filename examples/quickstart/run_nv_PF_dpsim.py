@@ -5,7 +5,10 @@ from pyvolt import nv_powerflow
 import numpy
 import cimpy
 import os
-import dpsim
+from villas.dataprocessing.readtools import *
+from villas.dataprocessing.timeseries import *
+import villas.dataprocessing.validationtools as validationtools
+import dpsimpy
 
 # Basic logger configuration
 logging.basicConfig(filename='run_nv_powerflow.log', level=logging.INFO, filemode='w')
@@ -23,13 +26,34 @@ xml_files = [os.path.join(xml_path, "Rootnet_FULL_NE_06J16h_DI.xml"),
              os.path.join(xml_path, "Rootnet_FULL_NE_06J16h_SV.xml"),
              os.path.join(xml_path, "Rootnet_FULL_NE_06J16h_TP.xml")]
 
-# Read cim files and create new network.System object
-res = cimpy.cim_import(xml_files, "cgmes_v2_4_15")
-system = network.System()
-base_apparent_power = 25  # MW
-system.load_cim_data(res['topology'], base_apparent_power)
+print(xml_files)
 
-results = ["ACLineSegment", "PowerTransformer", "EnergyConsumer"]
-for key, value in res["topology"].items():
-    if value.__class__.__name__ in results:
-        print(value.__str__())
+# Read cim files by dpsimpy.CIMReader
+sim_name = 'Rootnet_FULL_NE'
+reader = dpsimpy.CIMReader(sim_name)
+system = reader.loadCIM(50, xml_files, dpsimpy.Domain.SP, dpsimpy.PhaseType.Single, dpsimpy.GeneratorType.PVNode)
+
+# Run DPsim simulation
+sim = dpsimpy.Simulation(sim_name)
+sim.set_system(system)
+sim.set_domain(dpsimpy.Domain.SP)
+sim.set_solver(dpsimpy.Solver.NRP)
+
+logger = dpsimpy.Logger(sim_name)
+for node in system.nodes:
+    logger.log_attribute(node.name()+'.V', 'v', node)
+sim.add_logger(logger)
+
+sim.run()
+
+# Read DPim results
+path = 'logs/'
+dpsim_result_file = path + sim_name + '.csv'
+
+ts_dpsim = read_timeseries_csv(dpsim_result_file)
+
+# Fix for dpsim naming - TODO: unify dpsim notation in log file and update villas-dataprocessing accordingly
+for ts,values in ts_dpsim.items():
+    values.name = values.name[:-2]
+
+
