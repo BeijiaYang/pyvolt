@@ -65,7 +65,7 @@ print(Vest_ideal - Vtrue)
 
 # --- State Estimation with Non-Ideal Measurements ---
 """ Write here the percent uncertainties of the measurements"""
-Pmu_mag_unc = 1
+Pmu_mag_unc = 2
 
 # Create measurements data structures
 """use all node voltages as measures"""

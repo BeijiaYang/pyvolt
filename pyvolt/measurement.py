@@ -204,13 +204,14 @@ class MeasurementSet:
         if type == "simulation":
             np.random.seed(seed)
             if dist == "normal":
-                err_pu = np.random.normal(0, 0, len(self.measurements))
+                # err_pu = np.random.normal(0, 0, len(self.measurements))
                 for index, measurement in enumerate(self.measurements):
+                    err_pu = np.random.normal(0, measurement.std_dev)
                     if measurement.meas_type not in [MeasType.Ipmu_phase, MeasType.Vpmu_phase]:
-                        zdev = measurement.meas_value_ideal * measurement.std_dev
+                        zdev = measurement.meas_value_ideal * err_pu
                     elif measurement.meas_type in [MeasType.Ipmu_phase, MeasType.Vpmu_phase]:
-                        zdev = measurement.std_dev
-                    measurement.meas_value = measurement.meas_value_ideal + zdev * err_pu[index]
+                        zdev = err_pu
+                    measurement.meas_value = measurement.meas_value_ideal + zdev
             elif dist == "uniform":
                 err_pu = np.random.uniform(-1, 1, len(self.measurements))
                 for index, measurement in enumerate(self.measurements):
