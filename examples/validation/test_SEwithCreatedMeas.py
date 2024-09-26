@@ -41,6 +41,7 @@ results_pf, num_iter = nv_powerflow.solve(system_pyvolt)
 
 # --- State Estimation with Ideal Measurements ---
 """ Write here the percent uncertainties of the measurements"""
+""" Phase uncertainty is absolute uncertainty"""
 V_unc = 4
 I_unc = 0
 Sinj_unc = 2

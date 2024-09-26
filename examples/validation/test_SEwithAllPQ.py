@@ -32,25 +32,24 @@ results_pf, num_iter = nv_powerflow.solve(system_pyvolt)
 # --- State Estimation with Ideal Measurements ---
 """ Write here the percent uncertainties of the measurements"""
 """ Phase uncertainty is absolute uncertainty"""
-Pmu_mag_unc_1 = 0.8
-Pmu_phase_unc_1 = 0.1
+Sinj_unc_mag = 0.8
+Sinj_unc_phase = 0.1
 
 # ***********************************************
 # Insufficient measurements leads to SE "failure"
 # ***********************************************
 """No related measurement for last node"""
 measurements_set = measurement.MeasurementSet()
-for node in results_pf.nodes[ : -1]:
-    measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Vpmu_mag,
-                                        np.absolute(node.voltage_pu), Pmu_mag_unc_1)
-for node in results_pf.nodes[ : -1]:
-    measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Vpmu_phase,
-                                        np.angle(node.voltage_pu), Pmu_phase_unc_1)
+for node in results_pf.nodes[ : ]:
+    measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Sinj_real,
+                                        node.power_pu.real, Sinj_unc_mag)
+for node in results_pf.nodes[ : ]:
+    measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Sinj_imag,
+                                        node.power_pu.imag, Sinj_unc_phase)
 measurements_set.meas_creation()
 
 # print(measurements_set.getMeasValues())
 # print(measurements_set.getWeightsMatrix())
-
 
 # Perform state estimation
 state_estimation_results = nv_state_estimator.DsseCall(system_pyvolt, measurements_set)
