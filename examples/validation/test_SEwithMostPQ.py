@@ -32,6 +32,7 @@ results_pf, num_iter = nv_powerflow.solve(system_pyvolt)
 # --- State Estimation with Ideal Measurements ---
 """ Write here the percent uncertainties of the measurements"""
 """ Phase uncertainty is absolute uncertainty"""
+Vmag_unc = 3
 Sinj_unc_mag = 0.8
 Sinj_unc_phase = 0.1
 
@@ -46,6 +47,12 @@ for node in results_pf.nodes[ : ]:
 for node in results_pf.nodes[ : ]:
     measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Sinj_imag,
                                         node.power_pu.imag, Sinj_unc_phase)
+for node in results_pf.nodes[-1 : ]:
+    measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.V_mag,
+                                        abs(node.voltage_pu), Vmag_unc)
+# for node in results_pf.nodes[-1 : ]:
+#     measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Sinj_imag,
+#                                         node.power_pu.imag, Sinj_unc_phase)
 measurements_set.meas_creation()
 
 # print(measurements_set.getMeasValues())
