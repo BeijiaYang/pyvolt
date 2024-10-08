@@ -1,0 +1,63 @@
+{
+        "device": "id",
+        "timestamp": "2024-09-25T14:54:04.000",
+        "readings": [
+                {
+                        "channel": "V1",
+                        "magnitude": 6.97434,
+                        "phase": 0.601206,
+                        "frequency": 50.2994,
+                        "rocof": 2.67029e-05,
+                },
+                {
+                        "channel": "V2",
+                        "magnitude": 0.000184613,
+                        "phase": 1.36299,
+                        "frequency": 50.3383,
+                        "rocof": 0.0340118,
+                },
+                {
+                        "channel": "V3",
+                        "magnitude": 4.01036e-19,
+                        "phase": -3.17599,
+                        "frequency": 44.9031,
+                        "rocof": 0,
+                },
+                {
+                        "channel": "V4",
+                        "magnitude": 1.35272e-05,
+                        "phase": 0.833364,
+                        "frequency": 55.5885,
+                        "rocof": 5.61672,
+                },
+                {
+                        "channel": "I1",
+                        "magnitude": 6.51477e-06,
+                        "phase": -1.70735,
+                        "frequency": 43.4229,
+                        "rocof": -1.57705,
+                },
+                {
+                        "channel": "I2",
+                        "magnitude": 5.07601e-07,
+                        "phase": 1.32381,
+                        "frequency": 47.2191,
+                        "rocof": -9.31506,
+                },
+                {
+                        "channel": "I3",
+                        "magnitude": 4.01036e-19,
+                        "phase": -3.17599,
+                        "frequency": 44.9031,
+                        "rocof": 0,
+                },
+                {
+                        "channel": "I4",
+                        "magnitude": 4.78778e-05,
+                        "phase": -1.89379,
+                        "frequency": 50.0453,
+                        "rocof": 0.04562,
+                }
+
+        ]
+}
