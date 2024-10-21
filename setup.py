@@ -8,9 +8,10 @@ setup(name='pyvolt',
       author='Marco Pau, Markus Mirz, Jan Dinkelbach',
       author_email='acs-software@eonerc.rwth-aachen.de',
       packages=['pyvolt'],
-      install_requires=[
+      install_requires=
+      [
         'numpy',
         'pandas',
-        'cimpy'        
+        'cimpy'
       ]
       )
