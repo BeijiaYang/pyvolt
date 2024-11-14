@@ -76,8 +76,8 @@ for node_se in state_estimation_results.nodes:
 print("\n")
 
 # Print state estimation branch power
-print("Pyvolt state estimation branchpower (complex power flow at branch, measured at initial node): ")
+print("Pyvolt state estimation branchpower (complex power flow at branch, measured at final node): ")
 print("="*50)    
 for branch_se in state_estimation_results.branches:
-    print(f"{branch_se.topology_branch.uuid}\t=\t{branch_se.power*1000:<6.8f}\t\t\t")
+    print(f"{branch_se.topology_branch.uuid}\t=\t{branch_se.power2*1000:<6.8f}\t\t\t")
 
