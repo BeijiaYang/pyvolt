@@ -64,7 +64,7 @@ for node in results_pf.nodes:
 measurements_set.meas_creation()
 
 # Perform state estimation
-state_estimation_results = nv_state_estimator.DsseCall(system_pyvolt, measurements_set)
+state_estimation_results, covariance_nv = nv_state_estimator.DsseCall(system_pyvolt, measurements_set)
 
 print("\n")
 
@@ -75,9 +75,11 @@ for node_se in state_estimation_results.nodes:
     print(f"{node_se.topology_node.uuid}\t=\t{node_se.voltage*1000:<6.8f}\t\t\t")
 print("\n")
 
+# To obtain the Covariance matrix of estimated node voltages
+print(covariance_nv)
+
 # Print state estimation branch power
 print("Pyvolt state estimation branchpower (complex power flow at branch, measured at final node): ")
 print("="*50)    
 for branch_se in state_estimation_results.branches:
     print(f"{branch_se.topology_branch.uuid}\t=\t{branch_se.power2*1000:<6.8f}\t\t\t")
-

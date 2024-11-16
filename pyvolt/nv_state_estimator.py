@@ -43,11 +43,11 @@ def DsseCall(system, measurements, solver_type="conventional"):
     # run Estimator.
     if solver_type == "conventional":
         if est_code == 1:
-            Vest = DsseTrad(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_matrix)
+            Vest, Ginv = DsseTrad(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_matrix)
         elif est_code == 2:
-            Vest = DssePmu(nodes_num, measurements, Gmatrix, Bmatrix)
+            Vest, Ginv = DssePmu(nodes_num, measurements, Gmatrix, Bmatrix)
         else:
-            Vest = DsseMixed(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_matrix)
+            Vest, Ginv= DsseMixed(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_matrix)
     elif solver_type == "advanced":
         # TODO: derive from system inj_code analyzing whether load and gens connected to all nodes
         inj_code = 1
@@ -59,7 +59,7 @@ def DsseCall(system, measurements, solver_type="conventional"):
     results.load_voltages(Vest)
     results.calculate_all()
 
-    return results
+    return results, Ginv
 
 
 def DsseTrad(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_matrix):
@@ -161,7 +161,7 @@ def DsseTrad(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_matr
 
         num_iter = num_iter + 1
 
-    return V
+    return V, Ginv
 
 
 def DssePmu(nodes_num, measurements, Gmatrix, Bmatrix):
@@ -245,7 +245,7 @@ def DssePmu(nodes_num, measurements, Gmatrix, Bmatrix):
 
         num_iter = num_iter + 1
 
-    return V
+    return V, Ginv
 
 
 def DsseMixed(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_matrix):
@@ -356,7 +356,7 @@ def DsseMixed(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_mat
 
         num_iter = num_iter + 1
 
-    return V
+    return V, Ginv
 
 
 def DsseAllocation(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphase_matrix, meas_code, inj_code):
@@ -491,7 +491,7 @@ def DsseAllocation(nodes_num, measurements, Gmatrix, Bmatrix, Yabs_matrix, Yphas
 
         num_iter = num_iter + 1
 
-    return V
+    return V, Ginv
 
 
 def calculateJacobiMatrixSinj(measurements, nodes_num, Gmatrix, Bmatrix, inj_code, type):
