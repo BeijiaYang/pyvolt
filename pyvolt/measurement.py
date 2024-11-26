@@ -24,7 +24,7 @@ class MeasType(Enum):
 
 
 class Measurement:
-    def __init__(self, element, element_type, meas_type, meas_value_ideal, unc):
+    def __init__(self, element, element_type, meas_type, meas_value_ideal, unc, meas_range):
         """
         Creates a measurement, which is used by the estimation module. Possible types of measurements are: v, p, q, i, Vpmu and Ipmu
         @element: pointer to the topology_node / topology_branch (object of class network.Node / network.Branch)
@@ -46,17 +46,18 @@ class Measurement:
         self.meas_value_ideal = meas_value_ideal
         self.std_dev = unc / 300
         self.meas_value = 0.0  # measured values (affected by uncertainty)
+        self.meas_range = meas_range
 
 
 class MeasurementSet:
     def __init__(self):
         self.measurements = []  # array with all measurements
 
-    def create_measurement(self, element, element_type, meas_type, meas_value_ideal, unc):
+    def create_measurement(self, element, element_type, meas_type, meas_value_ideal, unc, meas_range):
         """
         to add elements to the measurements array
         """
-        self.measurements.append(Measurement(element, element_type, meas_type, meas_value_ideal, unc))
+        self.measurements.append(Measurement(element, element_type, meas_type, meas_value_ideal, unc, meas_range))
 
     def update_measurement(self, element_uuid, meas_type, meas_data, value_in_pu=True):
         """
@@ -223,6 +224,12 @@ class MeasurementSet:
         elif type == "field":
             for measurement in self.measurements:
                 measurement.meas_value = measurement.meas_value_ideal
+        elif type == "band":
+            np.random.seed(seed)
+            if dist == "uniform":
+                for index, measurement in enumerate(self.measurements):
+                    measurement.meas_value = np.random.uniform(measurement.meas_range[0], measurement.meas_range[1])
+                
 
     def meas_creation_test(self, err_pu):
         """
