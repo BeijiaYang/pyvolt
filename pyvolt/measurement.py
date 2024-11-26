@@ -32,6 +32,7 @@ class Measurement:
         @meas_type: clarifies which quantity is measured (object of enum MeasType, e.g. MeasType.V_mag)
         @meas_value_ideal: ideal measurement value (usually result of a powerflow calculation)
         @unc: measurement uncertainty in percent
+        @meas_range: "band" measurement type, range of [lower, upper] of the measurement
         """
 
         if not isinstance(element_type, ElemType):

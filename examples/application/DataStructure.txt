@@ -1,9 +1,9 @@
-p, q estimates data structure
+###### p, q estimates data structure
 
-            exp1    exp2    exp3    exp4    exp5    ...
-branchA
-branchB
-branchC
-branchD
-branchE
+            Branch_A    Branch_B    Branch_C    Branch_D    Branch_E    ...
+exp_1       p1a, q1a    
+exp_2
+exp_3                                           p3d, q3d
+exp_4
+exp_5
 ...
