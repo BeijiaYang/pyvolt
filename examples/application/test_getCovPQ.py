@@ -9,7 +9,7 @@ from pyvolt import nv_powerflow
 from pyvolt import nv_state_estimator
 from pyvolt import measurement
 from pyvolt import results
-import Cov_PQ 
+import CovariancesCreation 
 
 this_file_folder = os.path.dirname(os.path.realpath(__file__))
 xml_path = os.path.realpath(os.path.join(this_file_folder, "..", "sample_data", "CIGRE-MV-NoTap"))
@@ -33,6 +33,7 @@ iteration_num, iter = 100, 100
 state_estimation_results_set = []
 covariance_nv_set = []
 covariance_pq_set = []
+covariance_i_set  = []
 
 while iter > 0:
     
@@ -91,25 +92,42 @@ while iter > 0:
     print("="*50)    
     for branch_se in state_estimation_results.branches:
         print(f"{branch_se.topology_branch.uuid}\t=\t{branch_se.power*1000:<6.8f}\t\t\t")
-
+    print("\n")
+        
+    # Print state estimation branch current
+    print("Pyvolt state estimation branchcurrent: ")
+    print("="*50)    
+    for branch_se in state_estimation_results.branches:
+        print(f"{branch_se.topology_branch.uuid}\t=\t{branch_se.current*1000:<6.8f}\t\t\t")    
+    print("\n")
+    
     # Scale the branch power covariance matrix by the scaling factor
-    scaling_factor = 1e10
-    covariance_pq = Cov_PQ.get_covariance_pq(state_estimation_results, covariance_nv)
-    for branch_id, cov_matrix in covariance_pq.items():
-        scaled_cov_matrix = cov_matrix * scaling_factor
-        covariance_pq[branch_id] = scaled_cov_matrix
-    print("\n",covariance_pq)
+    scaling_factor = 1e6
+    covariance_pq = CovariancesCreation.get_covariance_pq(state_estimation_results, covariance_nv)
+    covariance_i  = CovariancesCreation.get_covariance_i (state_estimation_results, covariance_nv)
+    for branch_id, cov_matrix_pq in covariance_pq.items():
+        scaled_cov_matrix_pq = cov_matrix_pq * scaling_factor
+        covariance_pq[branch_id] = scaled_cov_matrix_pq
+    for branch_id, cov_matrix_i in covariance_i.items():
+        scaled_cov_matrix_i = cov_matrix_i * scaling_factor
+        covariance_i[branch_id] = scaled_cov_matrix_i
+        
+    print(covariance_pq)
+    print(covariance_i)
     
     state_estimation_results_set.append(state_estimation_results)
     covariance_nv_set.append(covariance_nv)
     covariance_pq_set.append(covariance_pq)
+    covariance_i_set .append(covariance_i)
     
     iter = iter - 1
 
 
 # Define the violation thresholds (here manually setup as percentage overload of the first experiment)
-violation_threshold_p = [branch.power.real*1.2 for branch in state_estimation_results_set[0].branches]
-violation_threshold_q = [branch.power.imag*1.15  for branch in state_estimation_results_set[0].branches]
+violation_threshold_p = [branch.power.real*2 for branch in state_estimation_results_set[0].branches]
+violation_threshold_q = [branch.power.imag*2  for branch in state_estimation_results_set[0].branches]
+violation_threshold_ire = [branch.current.real*2 for branch in state_estimation_results_set[0].branches]
+violation_threshold_iimag = [branch.current.imag*2 for branch in state_estimation_results_set[0].branches]
 
 # Initialize the experiment data structure
 probabilities = []
@@ -118,30 +136,43 @@ p_set = np.zeros((iteration_num,branch_num))
 q_set = np.zeros((iteration_num,branch_num))
 cov_p_set = np.zeros((iteration_num,branch_num))
 cov_q_set = np.zeros((iteration_num,branch_num))
+ire_set = np.zeros((iteration_num,branch_num))
+iimag_set = np.zeros((iteration_num,branch_num))
+cov_ire_set = np.zeros((iteration_num,branch_num))
+cov_iimag_set = np.zeros((iteration_num,branch_num))
 
 # Construction of experiment data structure
-for row, (res, cov) in enumerate(zip(state_estimation_results_set, covariance_pq_set)):
+for row, (res, cov_pq, cov_i) in enumerate(zip(state_estimation_results_set, covariance_pq_set, covariance_i_set)):
     for column, branch in enumerate(res.branches):
 
         # Store the power values for real and imaginary power (p and q)
         p_set[row, column] = branch.power.real
         q_set[row, column] = branch.power.imag
         
+        ire_set[row, column] = branch.current.real
+        iimag_set[row, column] = branch.current.imag
+        
+        
         # Store the corresponding covariance values for real and imaginary power
-        cov_p_set[row, column] = cov[branch.topology_branch.uuid][0, 0]
-        cov_q_set[row, column] = cov[branch.topology_branch.uuid][1, 1]
+        cov_p_set[row, column] = cov_pq[branch.topology_branch.uuid][0, 0]
+        cov_q_set[row, column] = cov_pq[branch.topology_branch.uuid][1, 1]
+        
+        cov_ire_set[row, column] = cov_i[branch.topology_branch.uuid][0, 0]
+        cov_iimag_set[row, column] = cov_i[branch.topology_branch.uuid][1, 1]
         
         
-# Loop through each branch (rows) and each experiment (columns)
+# Loop through each branch (column) and each experiment (rows)
 for column in range(p_set.shape[1]):     # Loop through branches
     for row in range(p_set.shape[0]):    # Loop through experiments
         
         prob_p = 1 - norm.cdf(violation_threshold_p[column], loc=p_set[row, column], scale=math.sqrt(cov_p_set[row, column]))
         prob_q = 1 - norm.cdf(violation_threshold_q[column], loc=q_set[row, column], scale=math.sqrt(cov_q_set[row, column]))
+        prob_ire = 1 - norm.cdf(np.abs(violation_threshold_ire[column]), loc=np.abs(ire_set[row, column]), scale=math.sqrt(cov_ire_set[row, column]))
+        prob_iimag = 1 - norm.cdf(violation_threshold_iimag[column], loc=iimag_set[row, column], scale=math.sqrt(cov_iimag_set[row, column]))
 
-        probabilities.append((prob_p, prob_q))
+        probabilities.append((prob_p, prob_q, prob_ire, prob_iimag))
 
 # Print the results for each branch and its corresponding probability
 print("\n")
 for branch, prob in zip(state_estimation_results_set[0].branches, probabilities):
-    print(f"{branch.topology_branch.uuid}: Probability of violation (p, q): ({prob[0]:.4f}, {prob[1]:.4f})")
+    print(f"{branch.topology_branch.uuid}: Probability of violation (p, q, ireal, iimaginary): ({prob[0]:.4f}, {prob[1]:.4f} , {prob[2]:.4f}, {prob[3]:.4f})")
