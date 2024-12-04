@@ -2,6 +2,7 @@ import os
 import cimpy
 import numpy as np
 import math
+import logging
 from scipy.stats import norm
 
 from pyvolt import network
@@ -11,6 +12,7 @@ from pyvolt import measurement
 from pyvolt import results
 import CovariancesCreation 
 
+logging.basicConfig(filename='test_getCovPQI.log', level=logging.INFO, filemode='w')
 this_file_folder = os.path.dirname(os.path.realpath(__file__))
 xml_path = os.path.realpath(os.path.join(this_file_folder, "..", "sample_data", "CIGRE-MV-NoTap"))
 xml_files = [os.path.join(xml_path, "Rootnet_FULL_NE_06J16h_DI.xml"),
@@ -29,7 +31,7 @@ results_pf, num_iter_cim = nv_powerflow.solve(system_pyvolt)
 
 
 # Repeated measurement creation and State Estimation experiments
-iteration_num, iter = 100, 100
+iteration_num, iter = 1, 1
 state_estimation_results_set = []
 covariance_nv_set = []
 covariance_pq_set = []
@@ -42,7 +44,7 @@ while iter > 0:
     measurements_set = measurement.MeasurementSet()
     for node in results_pf.nodes[-1:]:
         mean = np.absolute(node.voltage_pu)
-        upper = mean*1.01
+        upper = mean*1.03
         lower = mean*0.99
         measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Vpmu_mag,
                                             mean, (upper - lower)/math.sqrt(12),
@@ -54,17 +56,17 @@ while iter > 0:
         measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Vpmu_phase,
                                             mean, (upper - lower)/math.sqrt(12),
                                             [lower, upper])
-    for node in results_pf.nodes[:-1]:
+    for node in results_pf.nodes[:]:
         mean = node.power_pu.real
-        upper = mean*1.1
+        upper = mean*1.05
         lower = mean*0.9
         measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Sinj_real,
                                             mean, (upper - lower)/math.sqrt(12),
                                             [lower, upper])
-    for node in results_pf.nodes[:-1]:
+    for node in results_pf.nodes[:]:
         mean = node.power_pu.imag
-        upper = mean*1.1
-        lower = mean*0.9
+        upper = mean*1.03
+        lower = mean*0.92
         measurements_set.create_measurement(node.topology_node, measurement.ElemType.Node, measurement.MeasType.Sinj_imag,
                                             mean, (upper - lower)/math.sqrt(12),
                                             [lower, upper])
@@ -85,7 +87,8 @@ while iter > 0:
     print("\n")
 
     # To obtain the Covariance matrix of estimated node voltages
-    # print(covariance_nv)
+    print(covariance_nv)
+    print(np.size(covariance_nv))
 
     # Print state estimation branch power
     print("Pyvolt state estimation branchpower (complex power flow at branch, measured at intial node): ")
@@ -102,7 +105,7 @@ while iter > 0:
     print("\n")
     
     # Scale the branch power covariance matrix by the scaling factor
-    scaling_factor = 1e6
+    scaling_factor = 1
     covariance_pq = CovariancesCreation.get_covariance_pq(state_estimation_results, covariance_nv)
     covariance_i  = CovariancesCreation.get_covariance_i (state_estimation_results, covariance_nv)
     for branch_id, cov_matrix_pq in covariance_pq.items():
@@ -123,11 +126,11 @@ while iter > 0:
     iter = iter - 1
 
 
-# Define the violation thresholds (here manually setup as percentage overload of the first experiment)
-violation_threshold_p = [branch.power.real*2 for branch in state_estimation_results_set[0].branches]
-violation_threshold_q = [branch.power.imag*2  for branch in state_estimation_results_set[0].branches]
-violation_threshold_ire = [branch.current.real*2 for branch in state_estimation_results_set[0].branches]
-violation_threshold_iimag = [branch.current.imag*2 for branch in state_estimation_results_set[0].branches]
+# Define the violation thresholds (here manually setup as percentage larger than the first experiment)
+violation_threshold_p = [branch.power.real*1.2 for branch in state_estimation_results_set[0].branches]
+violation_threshold_q = [branch.power.imag*1.2 for branch in state_estimation_results_set[0].branches]
+violation_threshold_ire = [branch.current.real*1.4 for branch in state_estimation_results_set[0].branches]
+violation_threshold_iimag = [branch.current.imag*1.4 for branch in state_estimation_results_set[0].branches]
 
 # Initialize the experiment data structure
 probabilities = []
@@ -165,10 +168,10 @@ for row, (res, cov_pq, cov_i) in enumerate(zip(state_estimation_results_set, cov
 for column in range(p_set.shape[1]):     # Loop through branches
     for row in range(p_set.shape[0]):    # Loop through experiments
         
-        prob_p = 1 - norm.cdf(violation_threshold_p[column], loc=p_set[row, column], scale=math.sqrt(cov_p_set[row, column]))
-        prob_q = 1 - norm.cdf(violation_threshold_q[column], loc=q_set[row, column], scale=math.sqrt(cov_q_set[row, column]))
+        prob_p = 1 - norm.cdf(np.abs(violation_threshold_p[column]), loc=np.abs(p_set[row, column]), scale=math.sqrt(cov_p_set[row, column]))
+        prob_q = 1 - norm.cdf(np.abs(violation_threshold_q[column]), loc=np.abs(q_set[row, column]), scale=math.sqrt(cov_q_set[row, column]))
         prob_ire = 1 - norm.cdf(np.abs(violation_threshold_ire[column]), loc=np.abs(ire_set[row, column]), scale=math.sqrt(cov_ire_set[row, column]))
-        prob_iimag = 1 - norm.cdf(violation_threshold_iimag[column], loc=iimag_set[row, column], scale=math.sqrt(cov_iimag_set[row, column]))
+        prob_iimag = 1 - norm.cdf(np.abs(violation_threshold_iimag[column]), loc=np.abs(iimag_set[row, column]), scale=math.sqrt(cov_iimag_set[row, column]))
 
         probabilities.append((prob_p, prob_q, prob_ire, prob_iimag))
 

@@ -1,3 +1,3 @@
 from scipy.stats import norm
 
-print(1-norm.cdf((200-180)/10))
+print(1-norm.cdf((200-180)/10e-10))
