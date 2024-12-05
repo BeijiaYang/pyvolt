@@ -61,9 +61,10 @@ def get_covariance_pq(results, covariance_nv):
            
     return branch_power_covariances  
 
-def get_covariance_i(results, covariance_nv):
+def get_covariance_i_rec(results, covariance_nv):
     """
     Compute the covariance matrix of branch current based on node voltage estimates.
+    The branch current is in rectangular form: I_re, I_imag
 
     Parameters:
     results (pyvolt.results.PowerFlowResults): Power flow or state estimation results containing node voltages.
@@ -88,13 +89,7 @@ def get_covariance_i(results, covariance_nv):
         y_line = branch.topology_branch.y_pu
         g, b = y_line.real, y_line.imag
         
-        # Current equation: I = Y_line * (V_from - V_to)
-        # The Jacobian matrix with respect to voltage magnitudes and angles
-        di_dv_from = g - (g * np.cos(theta_from - theta_to) + b * np.sin(theta_from - theta_to))
-        di_dv_to = -(g * np.cos(theta_from - theta_to) + b * np.sin(theta_from - theta_to))
-        di_dtheta_from = v_mag_from * v_mag_to * (g * np.sin(theta_from - theta_to) - b * np.cos(theta_from - theta_to))
-        di_dtheta_to = -di_dtheta_from
-
+       
         # Jacobian of current w.r.t. voltage magnitudes and angles
         num_nodes = len(results.nodes)
         jacobian = np.zeros((2, 2 * num_nodes))  # 2 rows for current (real and imaginary), 2*num_nodes columns for [|V|, θ]
@@ -102,20 +97,57 @@ def get_covariance_i(results, covariance_nv):
         from_idx = from_node.index
         to_idx = to_node.index
         
-        # Real and imaginary components of the current
-        jacobian[0, from_idx] = di_dv_from
-        jacobian[0, to_idx] = di_dv_to
-        jacobian[0, num_nodes + from_idx] = di_dtheta_from
-        jacobian[0, num_nodes + to_idx] = di_dtheta_to
-        
-        # The imaginary part of the current, similar calculations for dq_dv
-        jacobian[1, from_idx] = di_dv_from
-        jacobian[1, to_idx] = di_dv_to
-        jacobian[1, num_nodes + from_idx] = di_dtheta_from
-        jacobian[1, num_nodes + to_idx] = di_dtheta_to
+         # Real part (Ir)
+        jacobian[0, from_idx] = g
+        jacobian[0, to_idx] = -g
+        jacobian[0, num_nodes + from_idx] = -b * v_mag_from
+        jacobian[0, num_nodes + to_idx] = b * v_mag_to
+
+        # Imaginary part (Ii)
+        jacobian[1, from_idx] = b
+        jacobian[1, to_idx] = -b
+        jacobian[1, num_nodes + from_idx] = g * v_mag_from
+        jacobian[1, num_nodes + to_idx] = -g * v_mag_to
 
         # Compute the covariance matrix for the branch current
         cov_current = jacobian @ covariance_nv @ jacobian.T
         branch_current_covariances[branch.topology_branch.uuid] = cov_current
     
     return branch_current_covariances
+
+def get_covariance_i(results, covariance_nv):
+    """
+    Compute the covariance matrix of branch current in polar form: I, theta.
+
+    Parameters:
+    results (pyvolt.results.PowerFlowResults): Power flow or state estimation results containing node voltages.
+    covariance_nv (np.ndarray): Covariance matrix of node voltage estimates.
+
+    Returns:
+    branch_current_covariances_polar (dict): Dictionary with branch UUIDs as keys and polar covariance matrices as values.
+    """
+    branch_current_covariances_polar = {}
+    branch_current_covariances_rect = get_covariance_i_rec(results, covariance_nv)
+    
+    for branch_uuid, cov_rect in branch_current_covariances_rect.items():
+        # Extract real and imaginary covariance components
+        I_r_var = cov_rect[0, 0]
+        I_i_var = cov_rect[1, 1]
+        I_r_I_i_cov = cov_rect[0, 1]
+        
+        # Current in rectangular coordinates
+        I_r = cov_rect[0, 0]  # Mean real part (if needed for calculation)
+        I_i = cov_rect[1, 1]  # Mean imaginary part (if needed for calculation)
+        
+        # Jacobian for polar conversion
+        mag = np.sqrt(I_r**2 + I_i**2)
+        J_polar = np.array([
+            [I_r / mag, I_i / mag],
+            [-I_i / (mag**2), I_r / (mag**2)]
+        ])
+        
+        # Covariance in polar form
+        cov_polar = J_polar @ cov_rect @ J_polar.T
+        branch_current_covariances_polar[branch_uuid] = cov_polar
+    
+    return branch_current_covariances_polar

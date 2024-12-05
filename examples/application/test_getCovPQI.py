@@ -88,7 +88,7 @@ while iter > 0:
 
     # To obtain the Covariance matrix of estimated node voltages
     print(covariance_nv)
-    print(np.size(covariance_nv))
+    print(np.shape(covariance_nv))
 
     # Print state estimation branch power
     print("Pyvolt state estimation branchpower (complex power flow at branch, measured at intial node): ")
@@ -105,7 +105,7 @@ while iter > 0:
     print("\n")
     
     # Scale the branch power covariance matrix by the scaling factor
-    scaling_factor = 1
+    scaling_factor = 1e6
     covariance_pq = CovariancesCreation.get_covariance_pq(state_estimation_results, covariance_nv)
     covariance_i  = CovariancesCreation.get_covariance_i (state_estimation_results, covariance_nv)
     for branch_id, cov_matrix_pq in covariance_pq.items():
@@ -129,8 +129,7 @@ while iter > 0:
 # Define the violation thresholds (here manually setup as percentage larger than the first experiment)
 violation_threshold_p = [branch.power.real*1.2 for branch in state_estimation_results_set[0].branches]
 violation_threshold_q = [branch.power.imag*1.2 for branch in state_estimation_results_set[0].branches]
-violation_threshold_ire = [branch.current.real*1.4 for branch in state_estimation_results_set[0].branches]
-violation_threshold_iimag = [branch.current.imag*1.4 for branch in state_estimation_results_set[0].branches]
+violation_threshold_i = [np.abs(branch.current*1.5) for branch in state_estimation_results_set[0].branches]
 
 # Initialize the experiment data structure
 probabilities = []
@@ -139,10 +138,8 @@ p_set = np.zeros((iteration_num,branch_num))
 q_set = np.zeros((iteration_num,branch_num))
 cov_p_set = np.zeros((iteration_num,branch_num))
 cov_q_set = np.zeros((iteration_num,branch_num))
-ire_set = np.zeros((iteration_num,branch_num))
-iimag_set = np.zeros((iteration_num,branch_num))
-cov_ire_set = np.zeros((iteration_num,branch_num))
-cov_iimag_set = np.zeros((iteration_num,branch_num))
+i_set = np.zeros((iteration_num,branch_num))
+cov_i_set = np.zeros((iteration_num,branch_num))
 
 # Construction of experiment data structure
 for row, (res, cov_pq, cov_i) in enumerate(zip(state_estimation_results_set, covariance_pq_set, covariance_i_set)):
@@ -152,16 +149,13 @@ for row, (res, cov_pq, cov_i) in enumerate(zip(state_estimation_results_set, cov
         p_set[row, column] = branch.power.real
         q_set[row, column] = branch.power.imag
         
-        ire_set[row, column] = branch.current.real
-        iimag_set[row, column] = branch.current.imag
-        
+        i_set[row, column] = np.abs(branch.current)       
         
         # Store the corresponding covariance values for real and imaginary power
         cov_p_set[row, column] = cov_pq[branch.topology_branch.uuid][0, 0]
         cov_q_set[row, column] = cov_pq[branch.topology_branch.uuid][1, 1]
         
-        cov_ire_set[row, column] = cov_i[branch.topology_branch.uuid][0, 0]
-        cov_iimag_set[row, column] = cov_i[branch.topology_branch.uuid][1, 1]
+        cov_i_set[row, column] = cov_i[branch.topology_branch.uuid][0, 0]
         
         
 # Loop through each branch (column) and each experiment (rows)
@@ -170,12 +164,11 @@ for column in range(p_set.shape[1]):     # Loop through branches
         
         prob_p = 1 - norm.cdf(np.abs(violation_threshold_p[column]), loc=np.abs(p_set[row, column]), scale=math.sqrt(cov_p_set[row, column]))
         prob_q = 1 - norm.cdf(np.abs(violation_threshold_q[column]), loc=np.abs(q_set[row, column]), scale=math.sqrt(cov_q_set[row, column]))
-        prob_ire = 1 - norm.cdf(np.abs(violation_threshold_ire[column]), loc=np.abs(ire_set[row, column]), scale=math.sqrt(cov_ire_set[row, column]))
-        prob_iimag = 1 - norm.cdf(np.abs(violation_threshold_iimag[column]), loc=np.abs(iimag_set[row, column]), scale=math.sqrt(cov_iimag_set[row, column]))
+        prob_i = 1 - norm.cdf(np.abs(violation_threshold_i[column]), loc=np.abs(i_set[row, column]), scale=math.sqrt(cov_i_set[row, column]))
 
-        probabilities.append((prob_p, prob_q, prob_ire, prob_iimag))
+        probabilities.append((prob_p, prob_q, prob_i))
 
 # Print the results for each branch and its corresponding probability
 print("\n")
 for branch, prob in zip(state_estimation_results_set[0].branches, probabilities):
-    print(f"{branch.topology_branch.uuid}: Probability of violation (p, q, ireal, iimaginary): ({prob[0]:.4f}, {prob[1]:.4f} , {prob[2]:.4f}, {prob[3]:.4f})")
+    print(f"{branch.topology_branch.uuid}: Probability of violation (p, q, I): ({prob[0]:.4f}, {prob[1]:.4f}, {prob[2]:.4f})")
