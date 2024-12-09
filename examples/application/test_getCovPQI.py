@@ -11,6 +11,7 @@ from pyvolt import nv_state_estimator
 from pyvolt import measurement
 from pyvolt import results
 import CovariancesCreation 
+from ResultVisualization import visual_branch_current
 
 logging.basicConfig(filename='test_getCovPQI.log', level=logging.INFO, filemode='w')
 this_file_folder = os.path.dirname(os.path.realpath(__file__))
@@ -172,3 +173,5 @@ for column in range(p_set.shape[1]):     # Loop through branches
 print("\n")
 for branch, prob in zip(state_estimation_results_set[0].branches, probabilities):
     print(f"{branch.topology_branch.uuid}: Probability of violation (p, q, I): ({prob[0]:.4f}, {prob[1]:.4f}, {prob[2]:.4f})")
+
+visual_branch_current(state_estimation_results, covariance_i, violation_threshold_i)
