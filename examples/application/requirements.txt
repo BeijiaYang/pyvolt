@@ -1,0 +1,9 @@
+Flask==2.2.2
+boto3==1.26.45
+uvicorn
+pyvolt
+cimpy
+numpy
+python-multipart
+minio
+fastapi
