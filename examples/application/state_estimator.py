@@ -17,7 +17,7 @@ def run_state_estimation(xml_files: list) -> dict:
         # Import CIM data using cimpy
         res = cimpy.cim_import(xml_files, "cgmes_v2_4_15")
         system = network.System()
-        base_apparent_power = 2  # MW; adjust as necessary
+        base_apparent_power = 25  # MW; adjust as necessary
         system.load_cim_data(res['topology'], base_apparent_power)
 
         # Execute power flow analysis

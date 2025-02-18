@@ -1,4 +1,5 @@
 import os
+import requests
 import uuid
 import json
 from typing import List
@@ -59,6 +60,9 @@ async def create_job(background_tasks: BackgroundTasks, files: List[UploadFile] 
     
     return {"job_id": job_id, "status": "submitted"}
 
+@app.get("/")
+async def root():
+    return {"server running"}
 
 @app.get("/jobs/{job_id}")
 async def get_job_result(job_id: str):
@@ -80,3 +84,28 @@ async def get_job_result(job_id: str):
         return {"job_id": job_id, "status": "failed", "error": job.get("error")}
     else:
         return {"job_id": job_id, "status": job["status"]}
+    
+    
+if __name__ == "__main__":
+
+    API_URL = "http://127.0.0.1:8000/jobs"  # ??
+
+    # List of XML file paths
+    xml_files = [
+        "Rootnet_FULL_NE_06J16h_DI.xml",
+        "Rootnet_FULL_NE_06J16h_EQ.xml",
+        "Rootnet_FULL_NE_06J16h_SV.xml",
+        "Rootnet_FULL_NE_06J16h_TP.xml"
+    ]
+
+    files = [("files", (file, open(file, "rb"), "application/xml")) for file in xml_files]
+
+    response = requests.post(API_URL, files=files)
+
+    print("Response Code:", response.status_code)
+    print("Response Data:", response.json())
+
+
+
+
+    
