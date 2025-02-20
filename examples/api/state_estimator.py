@@ -47,7 +47,7 @@ def run_state_estimation(xml_files: list) -> dict:
         measurements_set.meas_creation()
 
         # Perform state estimation
-        state_estimation_results = nv_state_estimator.DsseCall(system, measurements_set)
+        state_estimation_results, Ginv = nv_state_estimator.DsseCall(system, measurements_set)
 
         results = {}
         for node in state_estimation_results.nodes:
