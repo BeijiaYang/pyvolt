@@ -52,7 +52,7 @@ for node in results_pf.nodes:
 measurements_set.meas_creation()
 
 # Perform state estimation
-state_estimation_results = nv_state_estimator.DsseCall(system_pyvolt, measurements_set)
+state_estimation_results, Ginv = nv_state_estimator.DsseCall(system_pyvolt, measurements_set)
 
 # Read DPsim logger file to create a Results(), and compare the SE results with dpsim csv(here assumed as real voltages)
 dpsim_result_file = os.path.realpath(os.path.join(this_file_folder,
@@ -89,7 +89,7 @@ for node in results_pf.nodes:
 measurements_set.meas_creation()
 
 # Perform state estimation
-state_estimation_results_new = nv_state_estimator.DsseCall(system_pyvolt, measurements_set)
+state_estimation_results_new, Ginv_new = nv_state_estimator.DsseCall(system_pyvolt, measurements_set)
 
 # Print SE results and dpsim results(as real voltages), compare the difference and relative error rate
 print("Node||  State_Estimation_results.voltages(V) ||   DPsim_simulation_results.voltages(V) ||  Difference")

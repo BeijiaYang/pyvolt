@@ -24,7 +24,7 @@ class MeasType(Enum):
 
 
 class Measurement:
-    def __init__(self, element, element_type, meas_type, meas_value_ideal, unc, meas_range):
+    def __init__(self, element, element_type, meas_type, meas_value_ideal, unc, meas_range=None):
         """
         Creates a measurement, which is used by the estimation module. Possible types of measurements are: v, p, q, i, Vpmu and Ipmu
         @element: pointer to the topology_node / topology_branch (object of class network.Node / network.Branch)
@@ -54,7 +54,7 @@ class MeasurementSet:
     def __init__(self):
         self.measurements = []  # array with all measurements
 
-    def create_measurement(self, element, element_type, meas_type, meas_value_ideal, unc, meas_range):
+    def create_measurement(self, element, element_type, meas_type, meas_value_ideal, unc, meas_range=None):
         """
         to add elements to the measurements array
         """
