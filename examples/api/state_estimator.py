@@ -24,8 +24,8 @@ def run_state_estimation(xml_files: list) -> dict:
         results_pf, num_iter_cim = nv_powerflow.solve(system)
 
         # --- State Estimation ---
-        Pmu_mag_unc = 0
-        Pmu_phase_unc = 0
+        Pmu_mag_unc = 0.1
+        Pmu_phase_unc = 0.001
 
         measurements_set = measurement.MeasurementSet()
         for node in results_pf.nodes:

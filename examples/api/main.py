@@ -9,6 +9,8 @@ from fastapi.responses import JSONResponse
 # Import our state estimation logic
 from state_estimator import run_state_estimation
 
+from store2InfluxDB import storeData
+
 app = FastAPI()
 
 UPLOAD_DIR = "./uploads"
@@ -32,6 +34,9 @@ def process_job(job_id: str, file_paths: List[str]) -> None:
             json.dump(result, f)
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["result"] = result_path
+        
+        # Upload the results to InfluxDB, point: job_id
+        storeData(results=result, job_id=job_id)
 
     except Exception as e:
         jobs[job_id]["status"] = "failed"
